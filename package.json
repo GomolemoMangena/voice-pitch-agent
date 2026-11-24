@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "concurrently -k -n web,api -c cyan,green \"npm run dev:web\" \"npm run dev:server\"",
     "dev:web": "vite --port 5180 --strictPort",
+    "build:dashboard": "vite build --mode dashboard",
     "dev:server": "tsx watch server/index.ts"
   },
   "dependencies": {

@@ -3,6 +3,7 @@ import { useConversation } from "@elevenlabs/react";
 import type { BusinessSetup } from "../../../shared/agent";
 import type { SessionTicket } from "../../../shared/session";
 import { isGoodbye, isHardStop, isSoftDecline } from "../../intent";
+import { apiUrl } from "../../apiBase";
 import { playSpeech, stopSpeech } from "../../speech";
 import type { CallSession, TranscriptItem } from "../../conversation/types";
 
@@ -254,7 +255,7 @@ export function useCallSession(): CallSession {
 
       let ticket: SessionTicket;
       try {
-        const response = await fetch("/api/conversation/session", {
+        const response = await fetch(apiUrl("/conversation/session"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...setup, voiceId, speed, mode: microphone ? "voice" : "text" }),

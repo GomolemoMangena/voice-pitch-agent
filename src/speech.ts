@@ -1,3 +1,5 @@
+import { apiUrl } from "./apiBase";
+
 let playback: HTMLAudioElement | null = null;
 let playbackUrl: string | null = null;
 let request: AbortController | null = null;
@@ -25,7 +27,7 @@ export async function playSpeech(text: string, voiceId: string, speed: number): 
   const controller = new AbortController();
   request = controller;
   try {
-    const response = await fetch("/api/speak", {
+    const response = await fetch(apiUrl("/speak"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, voiceId, speed }),
