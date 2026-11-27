@@ -1,0 +1,14 @@
+---
+description: LisaSites places outbound calls only. Nicole is the voice. Ava is the unused backup.
+alwaysApply: true
+---
+
+# Outbound only
+
+LisaSites places outbound calls only. Do not add inbound answering, an inbound greeting, an inbound phone assignment, or an inbound media bridge.
+
+The opening line is: Hi, this is a quick call from LisaSites. Have I caught you at an alright time?
+
+Nicole (`miTHcVblZMXYolDQgUgx`, Nicole - Bright, Confident and Clear) is the voice on the agent. Ava (`x8syuETaTA9JYwAbE2JM`, Ava - Captivating & Clear) is the backup and is not assigned until asked.
+
+The published ElevenLabs prompt is the source of the script. Do not replace it with a placeholder or with an answering-call prompt.
