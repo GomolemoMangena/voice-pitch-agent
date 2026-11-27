@@ -275,7 +275,13 @@ export function useCallSession(): CallSession {
       userAtRef.current = performance.now();
       const overrides = microphone ? undefined : { conversation: { textOnly: true as const } };
       if (microphone && ticket.token) {
-        conversation.startSession({ conversationToken: ticket.token, connectionType: "webrtc", overrides });
+        // ElevenLabs rejects LiveKit's default /rtc/v1 join. The dual peer connection uses /rtc.
+        conversation.startSession({
+          conversationToken: ticket.token,
+          connectionType: "webrtc",
+          overrides,
+          webRtc: { singlePeerConnection: false },
+        });
       } else if (ticket.signedUrl) {
         conversation.startSession({ signedUrl: ticket.signedUrl, connectionType: "websocket", overrides });
       }
