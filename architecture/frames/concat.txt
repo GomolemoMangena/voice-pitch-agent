@@ -1,0 +1,6 @@
+file 'C:/Users/Private/Desktop/voice-pitch-agent/architecture/frames/01-system.mp4'
+file 'C:/Users/Private/Desktop/voice-pitch-agent/architecture/frames/02-loop.mp4'
+file 'C:/Users/Private/Desktop/voice-pitch-agent/architecture/frames/03-path.mp4'
+file 'C:/Users/Private/Desktop/voice-pitch-agent/architecture/frames/04-table.mp4'
+file 'C:/Users/Private/Desktop/voice-pitch-agent/architecture/frames/05-pace.mp4'
+file 'C:/Users/Private/Desktop/voice-pitch-agent/architecture/frames/06-after.mp4'

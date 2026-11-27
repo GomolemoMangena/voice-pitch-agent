@@ -1,0 +1,157 @@
+{
+  "name": "Save call result",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## After the person hangs up\n\nThe place-calls workflow already marks the number called when ElevenLabs accepts the dial. This workflow only writes result_summary.\n\n1. Activate this workflow.\n2. Copy the production URL of the webhook.\n3. In ElevenLabs, set the agent post-call webhook to that URL.\n4. The payload's conversation id must match the conversation_id stored on the Call queue row.",
+        "height": 280,
+        "width": 420,
+        "color": 4
+      },
+      "id": "d2f1b8c3-7a11-4e90-9b22-3c4d5e6f7001",
+      "name": "Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-40, -220]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "elevenlabs-call-finished",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "d2f1b8c3-7a11-4e90-9b22-3c4d5e6f7002",
+      "name": "Call finished",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 80],
+      "webhookId": "elevenlabs-call-finished"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const root = $json.body && typeof $json.body === 'object' ? $json.body : $json;\nconst data = root.data && typeof root.data === 'object' ? root.data : root;\nconst analysis = data.analysis && typeof data.analysis === 'object' ? data.analysis : {};\nconst outcome = analysis.call_successful || data.status || '';\nconst summary = analysis.transcript_summary || '';\nconst conversationId = data.conversation_id || root.conversation_id || '';\nconst result = [outcome, summary].filter((value) => value).join(' — ');\n\nreturn [{ json: { conversation_id: conversationId, result_summary: result } }];"
+      },
+      "id": "d2f1b8c3-7a11-4e90-9b22-3c4d5e6f7003",
+      "name": "Read the webhook",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [280, 80]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-conversation",
+              "leftValue": "={{ $json.conversation_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d2f1b8c3-7a11-4e90-9b22-3c4d5e6f7004",
+      "name": "Has a conversation id?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [560, 80]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Call queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "conversation_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.conversation_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "result_summary": "={{ $json.result_summary }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "d2f1b8c3-7a11-4e90-9b22-3c4d5e6f7005",
+      "name": "Write the result",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [860, 0]
+    }
+  ],
+  "connections": {
+    "Call finished": {
+      "main": [
+        [
+          {
+            "node": "Read the webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the webhook": {
+      "main": [
+        [
+          {
+            "node": "Has a conversation id?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has a conversation id?": {
+      "main": [
+        [
+          {
+            "node": "Write the result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

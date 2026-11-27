@@ -1,0 +1,360 @@
+{
+  "name": "Place outbound calls",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Before the first run\n\n1. Create an n8n data table named exactly **Call queue**.\n2. Add text columns: phone, customer_name, offer, status, conversation_id, call_sid, called_at, last_error, result_summary.\n3. Add a test row. phone must be E.164, such as +27821234567. status must be pending.\n4. Create three n8n variables: ELEVENLABS_API_KEY, ELEVENLABS_AGENT_ID, ELEVENLABS_AGENT_PHONE_NUMBER_ID.\n5. Import the Twilio number into ElevenLabs with the Account SID and Auth Token. Copy that number's phone number id into ELEVENLABS_AGENT_PHONE_NUMBER_ID. This workflow does not call Twilio itself.\n6. In the ElevenLabs agent prompt, {{customer_name}} and {{offer}} receive the values from the row.\n7. Run this workflow by hand once. An accepted dial sets status to called. A refused dial sets status to failed and stores last_error. Set status back to pending to try a failed row again.\n8. The schedule then takes 3 pending rows every 10 minutes and dials them one at a time. Set the n8n timezone to Africa/Johannesburg and narrow the schedule to calling hours before real use.",
+        "height": 520,
+        "width": 460,
+        "color": 4
+      },
+      "id": "b7c1a0e2-4d55-4a1e-9c31-0a6e5f8b2d11",
+      "name": "Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-520, 40]
+    },
+    {
+      "parameters": {},
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a01",
+      "name": "Run by hand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 80]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a02",
+      "name": "Every 10 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 300]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Call queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 3,
+        "options": {}
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a03",
+      "name": "Read pending numbers",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [280, 180],
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a04",
+      "name": "One number",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [560, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.elevenlabs.io/v1/convai/twilio/outbound-call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "xi-api-key",
+              "value": "={{ $vars.ELEVENLABS_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ agent_id: $vars.ELEVENLABS_AGENT_ID, agent_phone_number_id: $vars.ELEVENLABS_AGENT_PHONE_NUMBER_ID, to_number: $('One number').item.json.phone, conversation_initiation_client_data: { dynamic_variables: { customer_name: $('One number').item.json.customer_name || '', offer: $('One number').item.json.offer || '' } } }) }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a05",
+      "name": "Place the call",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [840, 180],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const row = $('One number').item.json;\nconst response = $input.item.json;\nconst nestedError = response.error && (response.error.message || response.error.description);\nconst refused = response.success === false ? (response.message || 'ElevenLabs refused the call') : '';\nconst errorMessage = nestedError || refused || '';\nconst conversationId = response.conversation_id || '';\nconst ok = !errorMessage && conversationId !== '';\n\nreturn [{\n  json: {\n    phone: row.phone,\n    ok,\n    conversation_id: conversationId,\n    call_sid: response.callSid || '',\n    last_error: ok ? '' : (errorMessage || 'No conversation id was returned'),\n  },\n}];"
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a06",
+      "name": "Read the result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 180]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "call-accepted",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a07",
+      "name": "Was the call accepted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1360, 180]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Call queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "phone",
+              "condition": "eq",
+              "keyValue": "={{ $json.phone }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "called",
+            "conversation_id": "={{ $json.conversation_id }}",
+            "call_sid": "={{ $json.call_sid }}",
+            "called_at": "={{ $now.toISO() }}",
+            "last_error": ""
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a08",
+      "name": "Mark called",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [1640, 80]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Call queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "phone",
+              "condition": "eq",
+              "keyValue": "={{ $json.phone }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "pending"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "failed",
+            "last_error": "={{ $json.last_error }}"
+          },
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "c1e0a9b4-6f22-4c8d-8a71-1b2d3e4f5a09",
+      "name": "Mark failed",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [1640, 320]
+    }
+  ],
+  "connections": {
+    "Run by hand": {
+      "main": [
+        [
+          {
+            "node": "Read pending numbers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 10 minutes": {
+      "main": [
+        [
+          {
+            "node": "Read pending numbers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read pending numbers": {
+      "main": [
+        [
+          {
+            "node": "One number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One number": {
+      "main": [
+        [
+          {
+            "node": "Place the call",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Place the call": {
+      "main": [
+        [
+          {
+            "node": "Read the result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the result": {
+      "main": [
+        [
+          {
+            "node": "Was the call accepted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Was the call accepted?": {
+      "main": [
+        [
+          {
+            "node": "Mark called",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark called": {
+      "main": [
+        [
+          {
+            "node": "One number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark failed": {
+      "main": [
+        [
+          {
+            "node": "One number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

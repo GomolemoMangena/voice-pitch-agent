@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><style>
+html, body { margin: 0; width: 1920px; height: 1080px; background: #101318; color: #f2f4f7; font-family: "Segoe UI", sans-serif; }
+.wrap { box-sizing: border-box; width: 1920px; height: 1080px; padding: 80px 88px; display: flex; flex-direction: column; justify-content: center; }
+.kicker { color: #8eb4ff; font-size: 20px; letter-spacing: 0.16em; text-transform: uppercase; margin-bottom: 22px; }
+h1 { font-size: 64px; line-height: 1.08; font-weight: 650; letter-spacing: -1.2px; margin: 0; max-width: 1600px; }
+.lede { margin-top: 22px; font-size: 30px; line-height: 1.35; color: #c5ccd6; max-width: 1500px; }
+.row { display: flex; gap: 28px; margin-top: 56px; }
+.panel { flex: 1; background: #1a1f27; border: 1px solid #2e3644; border-radius: 14px; padding: 32px 32px 28px; }
+.panel h2 { margin: 0 0 12px; font-size: 32px; font-weight: 650; }
+.panel p { margin: 0; font-size: 24px; line-height: 1.4; color: #c5ccd6; }
+.stepno { color: #8eb4ff; font-size: 22px; letter-spacing: 0.08em; margin-bottom: 14px; }
+.flow { display: flex; align-items: stretch; gap: 18px; margin-top: 48px; }
+.node { flex: 1; min-height: 200px; background: #1a1f27; border: 1px solid #2e3644; border-radius: 14px; padding: 32px; box-sizing: border-box; }
+.node strong { display: block; font-size: 32px; margin-bottom: 10px; }
+.node span { display: block; font-size: 22px; line-height: 1.35; color: #c5ccd6; }
+.arrow { width: 120px; flex: none; display: flex; flex-direction: column; justify-content: center; text-align: center; color: #8eb4ff; font-size: 40px; }
+.arrow small { display: block; color: #a8b0bc; font-size: 16px; margin-top: 6px; }
+.note { margin-top: 48px; font-size: 26px; line-height: 1.4; color: #c5ccd6; max-width: 1600px; }
+table { width: 100%; border-collapse: collapse; margin-top: 36px; font-size: 26px; }
+th { text-align: left; color: #a8b0bc; font-weight: 600; font-size: 18px; letter-spacing: 0.08em; text-transform: uppercase; padding: 0 18px 14px; }
+td { padding: 18px; border-top: 1px solid #2e3644; }
+tr.called td { background: #17211c; }
+tr.failed td { background: #24181a; }
+.tag { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 20px; }
+.tag.wait { color: #e2c27a; background: #2a2418; }
+.tag.ok { color: #9dccb0; background: #173024; }
+.tag.bad { color: #e3a3a8; background: #3a2024; }
+.metrics { display: flex; gap: 28px; margin-top: 64px; }
+.metric { flex: 1; background: #1a1f27; border: 1px solid #2e3644; border-radius: 14px; padding: 36px 32px; }
+.metric b { display: block; font-size: 54px; letter-spacing: -1px; margin-bottom: 8px; }
+.metric span { font-size: 24px; color: #c5ccd6; line-height: 1.35; }
+.when { display: flex; gap: 28px; margin-top: 42px; }
+.when .panel { min-height: 230px; }
+ol { margin: 28px 0 0; padding-left: 32px; }
+li { font-size: 26px; line-height: 1.45; color: #e8eaed; margin: 8px 0; }
+code { font-family: Consolas, monospace; font-size: 0.92em; color: #d5e2ff; }
+</style></head>
+<body><div class="wrap">
+<div class="kicker">Pace</div>
+<h1>A few calls, one at a time.</h1>
+<div class="metrics">
+  <div class="metric"><b>10 min</b><span>How often the schedule looks for pending rows.</span></div>
+  <div class="metric"><b>3</b><span>The most rows one run will pick up.</span></div>
+  <div class="metric"><b>1</b><span>How many calls are placed at the same time.</span></div>
+</div>
+<p class="note">customer_name and offer from the row are sent with the dial. In the ElevenLabs agent, use {{customer_name}} and {{offer}} where the agent should say them. Narrow the schedule to calling hours, and set the n8n timezone to Johannesburg, before real use.</p>
+</div></body></html>
